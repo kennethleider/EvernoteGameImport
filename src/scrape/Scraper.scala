@@ -22,7 +22,7 @@ object Scraper {
     val d = new ChromeDriver(options)
     d.get("http://store.steampowered.com/app/6860")
     d.getCurrentUrl
-    Thread.sleep(10000)
+    Thread.sleep(12000)
     d
   }
 

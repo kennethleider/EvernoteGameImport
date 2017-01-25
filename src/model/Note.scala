@@ -4,6 +4,8 @@ import java.io.{FileInputStream, InputStreamReader, FileReader, File}
 import java.net.URLEncoder
 import java.time.{Instant, LocalDate}
 
+import scala.io.Source
+import scala.util.Try
 import scala.xml.{Unparsed, NodeSeq, Node, XML}
 
 object DescribedURL {
@@ -18,6 +20,38 @@ class DescribedURL(val url: String, val desc: String)
 
 
 object Note {
+  def readParts(file : File) : Seq[Note] = {
+    println(s"Reading $file")
+    val root = XML.load(new InputStreamReader(new FileInputStream(file), "UTF-16"))
+    (root \ "note").map { note : Node =>
+      Note(
+        title = note \@ "title",
+        created = Try(Instant.parse(note \@ "created")).getOrElse(null),
+        modified = Instant.parse(note \@ "modified"),
+        tags = (note \ "tag").map { _.text },
+
+        sourceUrl = note \@ "source",
+        imageURL = note \@ "image",
+        review = Try(Review.read(note \ "review")).getOrElse(null),
+        releaseDate = Try(LocalDate.parse(note \@ "releaseDate")).getOrElse(null),
+        developer = DescribedURL.read(note \ "developer").headOption.getOrElse(null),
+        publisher = DescribedURL.read(note \ "publisher").headOption.getOrElse(null),
+        description = (note \ "short_description").text,
+        steamTags = (note \ "steamTag").flatMap { DescribedURL.read(_) },
+        genres= (note \ "genre").flatMap { DescribedURL.read(_) },
+        dlc = (note \ "content").flatMap { DescribedURL.read(_) },
+        playTime = Try((note \@ "playTime").toDouble).getOrElse(0.0),
+
+        website = note \ "links" \@ "website",
+        updateHistory = note \ "links" \@ "updates",
+        news = note \ "links" \@ "news",
+        discussions = note \ "links" \@ "discussions",
+        groupSearch = note \ "links" \@ "groups",
+        longDescription = (note \ "long-description" \ "div").toString()
+      )
+    }
+  }
+
   def read(file: File): Seq[Note] = {
     println(s"Reading $file")
     val root = XML.load(new InputStreamReader(new FileInputStream(file), "UTF-16"))

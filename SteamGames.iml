@@ -13,5 +13,6 @@
     <orderEntry type="library" name="org.scala-lang.modules:scala-xml_2.11:1.0.5" level="project" />
     <orderEntry type="library" name="net.sourceforge.htmlcleaner:htmlcleaner:2.8" level="project" />
     <orderEntry type="library" name="org.seleniumhq.selenium:selenium-chrome-driver:2.48.2" level="project" />
+    <orderEntry type="library" name="org.json4s:json4s-native_2.10:3.2.4" level="project" />
   </component>
 </module>

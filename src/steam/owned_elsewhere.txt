@@ -115,6 +115,22 @@
 231910:gog
 224940:gog
 10110:gog
+219780:gog
+225140:gog
+232050:gog
+80310:gog
+294770:gog
+294790:gog
+245390:gog
+242960:gog
+40700:gog
+227000:gog
+1510:gog
+259130:gog
+211600:gog
+275570:gog
+92800:gog
+20510:gog
 219760:green man gaming
 6840:green man gaming
 46440:green man gaming

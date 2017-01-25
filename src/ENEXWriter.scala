@@ -57,16 +57,24 @@ object ENEXWriter {
   }
 
   def main(args: Array[String]) {
-    val notes = args.map { new File(_).listFiles() }.flatten.map { Note.read(_) }.flatten
-    //val baselined = notes.map { applyBaseline(_) }
-    val baselined = notes.filter { note =>
-      val appID = note.sourceUrl.split("/").reverse.head
-      !baselines.contains(appID)
-    }
+    val additions = Note.readParts(new File("notes/manual/additions.xml"))
+    additions.map { note => note.sourceUrl -> note}
 
-    println (s"Exporting ${baselined.size} notes")
-    val writer = new PrintWriter("computer-games.enex","UTF-8")
-    writer.write(ExportTemplate.fill(baselined))
-    writer.close()
+    val notes = args.map { new File(_).listFiles() }.flatten.map { Note.read(_) }.flatten
+
+//    notes.map {
+//
+//    }
+
+//    //val baselined = notes.map { applyBaseline(_) }
+//    val baselined = notes.filter { note =>
+//      val appID = note.sourceUrl.split("/").reverse.head
+//      !baselines.contains(appID)
+//    }
+//
+//    println (s"Exporting ${baselined.size} notes")
+//    val writer = new PrintWriter("computer-games.enex","UTF-8")
+//    writer.write(ExportTemplate.fill(baselined))
+//    writer.close()
   }
 }

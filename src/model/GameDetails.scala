@@ -110,7 +110,7 @@ object GameDetails {
   def getPage(game : Game) : NodeSeq = {
 
     val cacheFile = new File(cacheDir, s"${game.appID}.html")
-    if (!cacheFile.exists() || Instant.ofEpochMilli(cacheFile.lastModified()).compareTo(Instant.now().minus(60, ChronoUnit.DAYS)) != 1) {
+    if (!cacheFile.exists() || Instant.ofEpochMilli(cacheFile.lastModified()).compareTo(Instant.now().minus(6, ChronoUnit.DAYS)) != 1) {
       val page = wayback.getOrElse(game.appID, game.storePage)
       driver.get(page)
       if (!driver.getCurrentUrl.equals(page)) throw new IllegalAccessException(s"${page} does not exist")

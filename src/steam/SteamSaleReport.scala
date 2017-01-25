@@ -36,7 +36,7 @@ object SteamSaleReport {
       val nodes = root.descendant_or_self
       Row(
         title = nodes.find(findClass("title")).map { _.text }.getOrElse("Unknown"),
-        appID = (root \@ "href").replaceAll(".*app/(.*)/.*","$1").toInt,
+        appID = (root \@ "href").replaceAll(".*(app|sub)/(.*)/.*","$2").toInt,
         date = Try(LocalDate.parse(nodes.find(findClass("col search_released responsive_secondrow")).map { _.text }.getOrElse("Unknown"), dateFormatter)).getOrElse(LocalDate.now),
         owned = nodes.find(findAttributeContains("class", "ds_owned_flag")).isDefined,
         price = Try(nodes.filter(findAttributeContains("class", " search_price ")).head.child.collect { case t : Text => t}.text.trim.replaceAll("[^\\d.]+", "").toDouble).getOrElse(0),
@@ -44,7 +44,7 @@ object SteamSaleReport {
       )
     }
 
-    rows.foreach { println(_) }
+    //rows.slice(0,5).foreach { println(_) }
 
     val price_filtered = rows.filter { _.price < MAX_PRICE }
     val discount_filtered = price_filtered.filter { _.discount <= MIN_DISCOUNT }
@@ -54,13 +54,16 @@ object SteamSaleReport {
       val elements = GameDetails.getPage(Game(row.appID.toString, 0))
       try {
         val notInterested = (elements.filter(classContains("queue_btn_ignore")).head.descendant.filter(classContains("queue_btn_active")) \@ "style").isEmpty
+        val earlyAccess = elements.exists { node => node.label == "h1" && node.text == "Early Access Game"}
         val onWishlist = false
-        !notInterested
+        !notInterested && !earlyAccess
       } catch {
         case e :
           Throwable =>
           println (row.appID)
+          Thread.sleep(10)
           e.printStackTrace()
+          System.exit(1)
           true
       }
     }
@@ -80,7 +83,7 @@ object SteamSaleReport {
 
     val cacheFile = new File(cacheDir, s"${pageNumber}.html")
     if (!cacheFile.exists() || Instant.ofEpochMilli(cacheFile.lastModified()).compareTo(Instant.now().minus(1, ChronoUnit.DAYS)) != 1) {
-      val page = s"http://store.steampowered.com/search/?category1=998&specials=1&page=${pageNumber}"
+      val page = s"http://store.steampowered.com/search/?specials=1&os=win#sort_by=&sort_order=0&specials=1&category1=998&os=win&page=${pageNumber}"
       println(page)
       driver.get(page)
       if (!driver.getCurrentUrl.equals(page)) throw new IllegalAccessException(s"${page} does not exist")
@@ -91,8 +94,8 @@ object SteamSaleReport {
       val writer = new FileOutputStream(cacheFile)
       serializer.writeToStream(node, writer)
       writer.close()
+      Thread.sleep(1000)
     }
-
 
     XML.loadFile(cacheFile).descendant_or_self
   }
