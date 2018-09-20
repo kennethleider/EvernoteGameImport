@@ -18,6 +18,9 @@ object SteamScraper {
 
     val games = Game.load(key, id)
     
+    
+    
+    
 //    val ownedElseWhere = Source.fromInputStream(classOf[Game].getResourceAsStream("/steam/owned_elsewhere.txt")).getLines().filter { !_.isEmpty }.map { line =>
 //      val tokens = line.split(":")
 //      val id = tokens(0)
