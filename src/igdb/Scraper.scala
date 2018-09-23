@@ -8,7 +8,7 @@ object Scraper {
       val steamUser = args(0)
    
       val steam = new SteamAccessor("45DBD24B26DFFDEB761F6C18F9AEE09A")
-      val igdb = new IGDBAccessor()
+      val igdb = new IGDBAccessor("2259e85f479bb30c5a7ae1ce27eaa478")
 
       val steamGames = steam.getAllGamesForUser(steamUser)
       steamGames.foreach { ownedGame =>

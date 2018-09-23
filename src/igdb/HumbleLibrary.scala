@@ -1,49 +1,70 @@
 package igdb
 
 import java.io.{File, FileWriter}
+import java.time.Instant
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 
 import scala.io.Source
+import scala.collection.JavaConverters._
+import scala.util.Try
 
+object Key {
+   def apply(c : Config) : Key = {
+      Key(c.getString("source"), c.getString("platform"), c.getString("key"), c.getString("type"), c.getString("description"), c.getString("status"))
+   }
+}
 
-case class Key(platform : String, key : String) {
-   def toConfigString() = s"""{ platform : $platform, key : $key }"""
+case class Key(source : String, platform : String, key : String, keyType : String = "game", description : String = "", status : String = "unknown") {
+   def toConfigString() = s"""{ source = "$source", platform = "$platform", key = "$key", type = "$keyType", description = ${ConfigValueFactory.fromAnyRef(description).render()}, status = "$status"}"""
 }
 case class Download(what : String, where : String) {
-   def toConfigString() = s"""{ what : $what, where : $where }"""
+   def toConfigString() = s"""{ what = "$what", where = "$where" }"""
 }
-case class HumbleBundleLibraryEntry(name : String, ignore : Boolean, processed : Boolean, keys : Seq[Key], downloads : Seq[Download]) {
+
+object HumbleBundleLibraryEntry {
+   def apply(c : Config) : HumbleBundleLibraryEntry = {
+      HumbleBundleLibraryEntry(c.getString("name"), c.getString("id"), Try(c.getString("type")).getOrElse("game"), c.getBoolean("ignore"), c.getBoolean("processed"), c.getConfigList("keys").asScala.map(Key.apply), Seq())
+   }
+}
+
+case class HumbleBundleLibraryEntry(name : String, id : String, `type` : String, ignore : Boolean, processed : Boolean, keys : Seq[Key], downloads : Seq[Download]) {
    def toConfigString() = {
       val keyString = keys.map(_.toConfigString).mkString("[",",","]")
       val downloadString = downloads.map(_.toConfigString).mkString("[",",","]")
-         s"""{ name : "$name", ignore : $ignore, processed : $processed, keys : $keyString, downloads : $downloadString}""".stripMargin
+         s"""{ name = ${ConfigValueFactory.fromAnyRef(name).render()}, id = "$id", ignore = $ignore, processed = $processed, keys = $keyString, downloads = $downloadString}""".stripMargin
    }
 }
 
 object HumbleLibrary {
    def main(args: Array[String]): Unit = {
       val entries = Source.fromFile(args(0)).getLines().toList
-         .map(HumbleBundleLibraryEntry(_, false, false, Seq(), Seq()))
-
-
-      val keys = Source.fromFile(args(1)).getLines().toList
-         .map(_.split("\", \"").toList)
-         .map(t => t(0).tail -> Key(t(1), t(2).substring(0, t(2).length - 1)))
-         .groupBy(_._1)
-         .mapValues(_.map(_._2))
-
-      entries.foreach { entry =>
-         println(s"${entry.name} ${keys.get(entry.name)}")
+         .map(HumbleBundleLibraryEntry(_, "", "game",false, false, Seq(), Seq()))
+   
+      val keys : Map[String, List[Key]] = if (new File(args(1)).exists()) {
+         Source.fromFile(args(1)).getLines().toList
+            .filterNot(_.startsWith("#"))
+            .map(line => try{ ConfigFactory.parseString(line) } catch { case th : Throwable => println(line); throw th})
+            .map { c =>c.getString("name") -> Key(c.getConfig("key")) }
+            .groupBy(_._1)
+            .mapValues(_.map(_._2))
+      } else {
+         Map()
       }
-
+      
       val entryNames = entries.map(_.name).toSet
       keys.filterNot(t => entryNames.contains(t._1))
+         .foreach(t => println(s"'${t._1}' looks to be a bad name for a key"))
+   
+   
+      println(s"Copy new keys in ${args(1)}")
+      println(s"# Games generated at ${Instant.now}")
+      entries
+         .map { entry =>
+            val newKeys = keys.getOrElse(entry.name, List())
+            entry.copy(keys = (entry.keys ++ newKeys).distinct)
+         }
+         .map(_.toConfigString)
          .foreach(println)
-//   println(keys)
-//      println(entries)
-//         .map(_.toConfigString)
-//         .mkString("{library = [\n   ", ",\n   ", "\n]}")
-//      println(ConfigFactory.parseString(formatted))
    }
 }
